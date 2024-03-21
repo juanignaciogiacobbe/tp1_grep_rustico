@@ -1,7 +1,7 @@
-pub mod regex_reader;
-
 pub mod regex_processor;
 
-pub mod command_reader;
+pub mod command_processor;
 
 pub mod caracter;
+
+pub mod file_processor;

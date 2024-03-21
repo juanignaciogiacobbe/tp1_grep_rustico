@@ -1,13 +1,24 @@
+use core::fmt::Debug;
+
+
+#[derive(Debug, PartialEq)]
 struct CaracterNormal {
     caracter: char,
 }
 
+#[derive(Debug, PartialEq)]
 struct Metacaracter {
     caracter: char,
 }
 
 pub trait Caracter {
     fn get_caracter(&self) -> char;
+}
+
+impl Debug for dyn Caracter {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Caracter{{{}}}", self.get_caracter())
+    }
 }
 
 impl Caracter for CaracterNormal {
@@ -40,6 +51,9 @@ impl Metacaracter {
 
 pub fn definir_caracter(caracter: char) -> Box<dyn Caracter> {
     match caracter {
+        '.' => Box::new(Metacaracter::new(caracter)),
+        '^' => Box::new(Metacaracter::new(caracter)),
+        '$' => Box::new(Metacaracter::new(caracter)),
         '*' => Box::new(Metacaracter::new(caracter)),
         _ => Box::new(CaracterNormal::new(caracter)),
     }
