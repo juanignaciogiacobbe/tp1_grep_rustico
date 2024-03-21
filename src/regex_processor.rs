@@ -20,35 +20,34 @@ impl RegexProcessor {
         }
     }
 
-    //pub fn get_vector_caracteres(&self) -> Vec<Box<dyn Caracter>> {
-        //let mut vector_caracteres = vec![];
+    pub fn filtrar(palabras_a_filtrar: Vec<String>) -> Vec<String> {
+        let resultado_esperado = vec![];
 
-        //for c in self.caracteres {
-          //  vector_caracteres.push(c)
+        //for palabra in palabras_a_filtrar {
+
         //}
 
-        //vector_caracteres
+        resultado_esperado
+    }
 
-      //  self.caracteres.clone()
-    //}
 }
 
 #[cfg(test)]
 mod tests {
-   // use super::*;
+    use super::*;
+    use crate::regex_processor::RegexProcessor;
 
-    //#[test]
-    //fn test_01_ingreso_una_regex_cualquiera_y_el_reader_se_crea_correctamente() {
-      //  let regex_reader = RegexProcessor::new("hola".to_string());
+    #[test]
+    fn test_01_dado_un_vector_de_palabras_utilizo_un_regex_processor_para_filtrarlas() {
+        let regex_processor = RegexProcessor::new("juan".to_string());
 
-    //    let caracter_1: Box<dyn Caracter> = definir_caracter('h');
-    //    let caracter_2: Box<dyn Caracter> = definir_caracter('o');
-     //   let caracter_3: Box<dyn Caracter> = definir_caracter('l');
-    //    let caracter_4: Box<dyn Caracter> = definir_caracter('a');
+        let mut palabras_a_filtrar = vec!["juan".to_string(), "juancito".to_string(), "juaanito".to_string(), "joan".to_string()];
 
-    //    let vector_caracteres_esperado = vec![caracter_1, caracter_2, caracter_3, caracter_4];
+        let resultado_esperado = vec!["juan", "juancito"];
 
-        //assert_eq!(regex_reader.get_vector_caracteres(), vector_caracteres_esperado);
-    //}
+        let resultado_filtro = RegexProcessor::filtrar(palabras_a_filtrar);
+
+        assert_eq!(resultado_filtro, resultado_esperado);
+    }
 
 }

@@ -1,6 +1,5 @@
 use core::fmt::Debug;
 
-
 #[derive(Debug, PartialEq)]
 struct CaracterNormal {
     caracter: char,
@@ -13,6 +12,7 @@ struct Metacaracter {
 
 pub trait Caracter {
     fn get_caracter(&self) -> char;
+    fn filtrar_palabra(&self, palabra: String) -> bool;
 }
 
 impl Debug for dyn Caracter {
@@ -25,6 +25,16 @@ impl Caracter for CaracterNormal {
     fn get_caracter(&self) -> char { 
         self.caracter.clone()
     }
+
+    fn filtrar_palabra(&self, palabra: String) -> bool {
+        for char in palabra.chars() {
+            if char == self.caracter {
+                println!("Encontre el caracter!");
+            }
+        }
+
+        true
+    }
 }
 
 impl CaracterNormal {
@@ -33,11 +43,23 @@ impl CaracterNormal {
             caracter: caracter
         }
     }
+
+    
 }
 
 impl Caracter for Metacaracter {
     fn get_caracter(&self) -> char { 
         self.caracter.clone()
+    }
+
+    fn filtrar_palabra(&self, palabra: String) -> bool {
+        for char in palabra.chars() {
+            if char == self.caracter {
+                println!("Encontre el caracter!");
+            }
+        }
+
+        true
     }
 }
 
@@ -86,4 +108,12 @@ mod tests {
 
         assert_eq!(caracter.get_caracter(), '*');
     }
+
+    #[test]
+    fn test_04_ingreso_una_palabra_y_se_encuentra_la_letra_a() {
+        let caracter: Box<dyn Caracter> = definir_caracter('a');
+
+        assert_eq!(caracter.filtrar_palabra("juaaaan".to_string()), true);
+    }
+
 }
