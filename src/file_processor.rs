@@ -51,7 +51,7 @@ mod tests {
     #[test] 
     fn test_01_ingreso_una_ruta_valida_y_el_processor_se_crea_correctamente() {
         //NOTA: Para correr este test, tengo el directorio 'data', y dentro tengo a data.txt
-        let file_processor = FileProcessor::build("./data/data.txt".to_string());
+        let file_processor = FileProcessor::build("./Documents/taller/data.txt".to_string());
         
         assert!(file_processor.is_ok());
     }
