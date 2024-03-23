@@ -1,3 +1,5 @@
+use std::vec;
+
 pub trait Expresion {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str;
 }
@@ -121,6 +123,91 @@ impl Expresion for DollarSign {
 }
 
 //FINALIZAN LAS ANCHORING EXPRESSIONS
+
+
+//EMPIEZAN LAS BRACKET EXPRESSIONS
+
+pub struct Brackets {
+    caracteres_dentro_del_bracket: Vec<char>,
+    indices_brackets: Vec<usize>,
+    expresion: String
+}
+
+impl Brackets {
+    pub fn new(expresion: &str) -> Self {
+        let mut indices_brackets: Vec<usize> = vec![];
+        let vector_caracteres: Vec<char> = expresion.chars().collect();
+        let mut vector_caracteres_dentro_del_bracket: Vec<char> = vec![];
+
+        for i in 0..vector_caracteres.len() {
+            if vector_caracteres[i] == '[' {
+                indices_brackets.push(i);
+            } else if vector_caracteres[i] == ']' {
+                indices_brackets.push(i);
+
+            }
+        }
+
+        for j in (indices_brackets[0] + 1)..indices_brackets[1] {
+            vector_caracteres_dentro_del_bracket.push(vector_caracteres[j]);
+        }
+
+        Self { 
+            caracteres_dentro_del_bracket: vector_caracteres_dentro_del_bracket,
+            expresion: expresion.to_string(),
+            indices_brackets: indices_brackets
+        }
+    }
+}
+
+impl Expresion for Brackets {
+    fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str {
+        let regex_chars: Vec<char> = self.expresion.chars().collect();
+        let linea_chars: Vec<char> = linea.chars().collect(); 
+
+        let mut regex_index: usize = 0;
+        let mut linea_index: usize = 0;
+                
+        while regex_index < regex_chars.len() && linea_index < linea_chars.len() {
+            if regex_index == self.indices_brackets[0] {
+                for char in &self.caracteres_dentro_del_bracket {
+                    if char == &linea_chars[linea_index] {
+                        linea_index += 1;
+                        regex_index = regex_index + self.caracteres_dentro_del_bracket.len() + 2;
+                    }
+                }
+
+                if regex_index != (self.indices_brackets[1] + 1) { //no matchee con ningun item dentro del bracket
+                    regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
+                    linea_index += 1;
+                }
+            }
+
+            if regex_chars[regex_index] == '.' {
+                regex_index += 1;
+                linea_index += 1;
+                        
+            } else if regex_chars[regex_index] == linea_chars[linea_index] {
+                regex_index += 1;
+                linea_index += 1;
+                        
+            } else {
+                regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
+                linea_index += 1;
+                        
+            }
+        }
+                
+        if regex_index == (regex_chars.len()) {
+            linea
+        } else {
+            "hola"
+        }
+    }
+}
+
+//FINALIZAN LAS BRACKET EXPRESSIONS
+
 
 //EMPIEZAN LAS REPETITION EXPRESSIONS
 
@@ -402,6 +489,14 @@ mod tests {
         let expresion_con_asterisk = CurvyBrackets::new("abcd{2, 4}ef", "2, 4");
 
         assert_eq!(expresion_con_asterisk.filtrar_linea("juan dice el abecedario: abcddef"), "juan dice el abecedario: abcddef");
+    }
+
+    #[test]
+    fn test_08_creo_una_expresion_con_brackets_y_filtro_una_linea_dada() {
+        let expresion_con_brackets = Brackets::new("la [aeiou] es una vocal");
+
+        assert_eq!(expresion_con_brackets.filtrar_linea("juan dice que la f es una vocal, pero la maestra lo corrigio y le dijo que la e es una vocal"),
+                                                         "juan dice que la f es una vocal, pero la maestra lo corrigio y le dijo que la e es una vocal");    
     }
 
 }
