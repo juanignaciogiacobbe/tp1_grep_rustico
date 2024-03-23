@@ -1,10 +1,3 @@
-
-
-//pub fn procesar_period(expresion: &str) -> String {
-  //  let reemplazado = expresion.replace(".", " ");
-    //reemplazado
-//}
-
 pub trait Expresion {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str;
 }
@@ -14,7 +7,6 @@ pub trait Expresion {
 //El filtro caret '^' consiste en filtrar aquellas lineas que inicien
 //con un patron definido
 pub struct Caret {
-   // filtro: String,
     expresion_normal: ExpresionNormal
 }
 
@@ -30,7 +22,6 @@ impl Caret {
 
 impl Expresion for Caret {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str {
-        //if linea.starts_with(&self.filtro) {
         let largo_expresion_normal = self.expresion_normal.get_largo();
         let primeros_caracteres_linea = &linea[0..largo_expresion_normal];
         
@@ -47,20 +38,28 @@ impl Expresion for Caret {
 //El filtro dollar sign '$' consiste en filtrar aquellas lineas que terminen
 //con un patron definido
 pub struct DollarSign {
-    filtro: String
+    expresion_normal: ExpresionNormal
+
 }
 
 impl DollarSign {
     pub fn new(expresion: &str) -> Self {
         let filtro : String = expresion.chars().take(expresion.len() - 1).collect();
 
-        Self { filtro: filtro.to_string() }
+        let expresion_normal = ExpresionNormal::new(&filtro);
+
+        Self { expresion_normal }
     }
 }
 
 impl Expresion for DollarSign {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str {
-        if linea.ends_with(&self.filtro) {
+        let largo_expresion_normal = self.expresion_normal.get_largo();
+        let ultimos_caracteres_linea = &linea[(linea.len() - largo_expresion_normal)..(linea.len())];
+
+        let resultado_filtro = self.expresion_normal.filtrar_linea(ultimos_caracteres_linea);
+
+        if resultado_filtro == ultimos_caracteres_linea {
             linea
         } else {
             "hola"
@@ -72,9 +71,9 @@ impl Expresion for DollarSign {
 
 //EMPIEZAN LAS REPETITION EXPRESSIONS
 
-//pub struct Asterisk {
+pub struct Asterisk {
        
-//}
+}
 
  
 
