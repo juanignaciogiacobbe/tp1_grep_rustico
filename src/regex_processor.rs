@@ -1,4 +1,4 @@
-
+use crate::expresion::Expresion;
 
 pub fn validar_metacaracter(regular_expression: &str, caracter: char) {
     if let Some(indice) = regular_expression.chars().position(|c| c == caracter) {
@@ -26,13 +26,19 @@ impl RegexProcessor {
     //metacaracteres. Si encuentro metacaracteres,
     //tengo que actualizar el filtro.
     pub fn new(regular_expression: &str) -> Self {
+        let mut vector_expresiones: Vec<Box<dyn Expresion>> = vec![];
 
+        //por cada metacaracter encontrado, voy a splitear la regular expression,
+        //y voy a crear la expresion correspondiente.
         for caracter in regular_expression.chars() {
             match caracter {
-                //'.' => validar_metacaracter(regular_expression, '.'),
+                '*' => println!("Soy un anchoring!"),
                 _ => println!("Encontre un caracter normal")
             }
         }
+
+        //si mi vector de expresiones termina vacio
+        //quiere decir que no encontre ningun metacaracter :D
 
         Self { regular_expression: regular_expression.to_string() }
     }
