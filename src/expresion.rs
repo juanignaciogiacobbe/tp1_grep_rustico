@@ -14,20 +14,29 @@ pub trait Expresion {
 //El filtro caret '^' consiste en filtrar aquellas lineas que inicien
 //con un patron definido
 pub struct Caret {
-    filtro: String
+   // filtro: String,
+    expresion_normal: ExpresionNormal
 }
 
 impl Caret {
     pub fn new(expresion: &str) -> Self {
         let filtro : String = expresion.chars().skip(1).collect();
 
-        Self { filtro: filtro.to_string() }
+        let expresion_normal = ExpresionNormal::new(&filtro);
+
+        Self { expresion_normal }
     }
 }
 
 impl Expresion for Caret {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str {
-        if linea.starts_with(&self.filtro) {
+        //if linea.starts_with(&self.filtro) {
+        let largo_expresion_normal = self.expresion_normal.get_largo();
+        let primeros_caracteres_linea = &linea[0..largo_expresion_normal];
+        
+        let resultado_filtro = self.expresion_normal.filtrar_linea(primeros_caracteres_linea);
+
+        if resultado_filtro == primeros_caracteres_linea {
             linea
         } else {
             "hola"
@@ -72,6 +81,8 @@ impl Expresion for DollarSign {
 //FINALIZAN LAS REPETITION EXPRESSIONS
 
 
+//EMPIEZAN LAS EXPRESIONES NORMALES
+
 //basicamente, una expresion con SOLO caracteres normales.
 //aqui voy a contemplar el uso del Period '.'
 //porque consiste en verlo como un caracter cualquiera a la hora de filtrar.
@@ -82,58 +93,63 @@ pub struct ExpresionNormal {
 impl ExpresionNormal {
     pub fn new(expresion: &str) -> Self {
         let expresion_final = expresion.to_string();
-
+        
         //busco si dentro de la expresion tengo algun period '.'
         //for caracter in expresion.chars() {
-          //  match caracter {
-            //    '.' => expresion_final = procesar_period(&expresion),
-            //    _ => println!("Soy un caracter normal")
-            //};
-        //}
-
-        //println!("{}", expresion_final);
+            //  match caracter {
+                //    '.' => expresion_final = procesar_period(&expresion),
+                //    _ => println!("Soy un caracter normal")
+                //};
+                //}
+                
+                //println!("{}", expresion_final);
         Self { expresion: expresion_final }
     }
-}
 
+    pub fn get_largo(&self) -> usize {
+        self.expresion.len()
+    }
+}
+        
 impl Expresion for ExpresionNormal {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str {
         let regex_chars: Vec<char> = self.expresion.chars().collect();
         let linea_chars: Vec<char> = linea.chars().collect();
-
+                
         let mut regex_index: usize = 0;
         let mut linea_index: usize = 0;
-
+                
         while regex_index < regex_chars.len() && linea_index < linea_chars.len() {
             if regex_chars[regex_index] == '.' {
                 regex_index += 1;
                 linea_index += 1;
-
+                        
             } else if regex_chars[regex_index] == linea_chars[linea_index] {
                 regex_index += 1;
                 linea_index += 1;
-
+                        
             } else {
                 regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
                 linea_index += 1;
-
+                        
             }
         }
-
+                
         if regex_index == (regex_chars.len()) {
             linea
         } else {
             "hola"
         }
-
+                
     } 
 }
-
-
+        
+//FINALIZAN LAS EXPRESIONES NORMALES
+        
 #[cfg(test)]
 mod tests {
     use super::*;
-
+            
     #[test]
     fn test_01_creo_una_expresion_normal_y_filtro_una_linea_dada() {
         let expresion_normal = ExpresionNormal::new("abcd");
@@ -151,10 +167,9 @@ mod tests {
 
     #[test]
     fn test_03_creo_una_expresion_con_caret_y_filtro_una_linea_dada() {
-        let expresion_con_caret = Caret::new("^abcd");
+        let expresion_con_caret = Caret::new("^ab.cd");
 
-        assert_eq!(expresion_con_caret.filtrar_linea("abcdefghijk"), "abcdefghijk");
-
+        assert_eq!(expresion_con_caret.filtrar_linea("abecdefghijk"), "abecdefghijk");
     }
 
     #[test]
