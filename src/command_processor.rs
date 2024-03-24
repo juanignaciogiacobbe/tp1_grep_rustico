@@ -16,18 +16,13 @@ pub struct CommandProcessor {
 impl CommandProcessor {
   pub fn build(args: Vec<String>) -> Result<CommandProcessor, CustomError> {  
     
-    if args.len() < CANTIDAD_ARGUMENTOS_NECESARIOS {
-      return Err(CustomError::ArgumentosInsuficientes);
-
-    } else if args.len() > CANTIDAD_ARGUMENTOS_NECESARIOS {
-      return Err(CustomError::ExcesoDeArgumentos)
-    }
+    CommandProcessor::procesar_cantidad_argumentos(args.len())?;
         
     let regular_expression = &args[REGULAR_EXPRESSION];
     let ruta_archivo = &args[RUTA_ARCHIVO];
 
-    let file_processor = FileProcessor::build(ruta_archivo.to_string())?;
-    let regex_processor = RegexProcessor::new(regular_expression);
+    let file_processor = FileProcessor::build(ruta_archivo)?;
+    let regex_processor = RegexProcessor::build(regular_expression)?;
 
     Ok(CommandProcessor {
       file_processor: file_processor,
@@ -36,13 +31,27 @@ impl CommandProcessor {
   }
 
   pub fn run(&self) -> Result<(), CustomError>{
-    let lecturas = match self.file_processor.obtener_lecturas() {
+    let lecturas: Vec<String> = match self.file_processor.obtener_lecturas() {
           Ok(lecturas) => lecturas,
           Err(_err) => return Err(_err)
     };
 
+    self.regex_processor.filtrar_lecturas(lecturas);
+
     Ok(())
   }
+
+  fn procesar_cantidad_argumentos(cantidad_argumentos: usize) -> Result<(), CustomError> {
+    if cantidad_argumentos < CANTIDAD_ARGUMENTOS_NECESARIOS {
+      return Err(CustomError::ArgumentosInsuficientes);
+  
+    } else if cantidad_argumentos > CANTIDAD_ARGUMENTOS_NECESARIOS {
+      return Err(CustomError::ExcesoDeArgumentos)
+    }
+  
+    Ok(())
+  }
+
 }
 
 
