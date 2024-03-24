@@ -16,6 +16,7 @@ pub fn validar_metacaracter(regular_expression: &str, caracter: char) {
 //capaz de conformar el filtro.
 //ademas, le pasaremos las lecturas del archivo
 //y sera el encargado de aplicar el filtro.
+#[derive(Debug)]
 pub struct RegexProcessor {
     regular_expression: String,
     separacion_expresiones: Vec<Box<dyn Expresion>> 

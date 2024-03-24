@@ -1,36 +1,39 @@
 use crate::file_processor::FileProcessor;
 use crate::custom_error::CustomError;
-//use crate::regex_processor::RegexProcessor;
+use crate::regex_processor::RegexProcessor;
 
-//const REGULAR_EXPRESSION: usize = 1;
+const REGULAR_EXPRESSION: usize = 1;
 const RUTA_ARCHIVO: usize = 2;
 const CANTIDAD_ARGUMENTOS_NECESARIOS: usize = 3; //ingresa el ejecutable, la regex, y el file path.
 
 
 #[derive(Debug)]
 pub struct CommandProcessor {
-   // file_processor: FileProcessor,
-   // regex_processor: RegexProcessor
+  file_processor: FileProcessor,
+  regex_processor: RegexProcessor
 }
 
 impl CommandProcessor {
-    pub fn build(args: Vec<String>) -> Result<CommandProcessor, CustomError> {  
-      if args.len() < CANTIDAD_ARGUMENTOS_NECESARIOS {
-          return Err(CustomError::ArgumentosInsuficientes);
-      }
+  pub fn build(args: Vec<String>) -> Result<CommandProcessor, CustomError> {  
+    if args.len() < CANTIDAD_ARGUMENTOS_NECESARIOS {
+      return Err(CustomError::ArgumentosInsuficientes);
+    }
         
-        //let regular_expression = &args[REGULAR_EXPRESSION];
-      let ruta_archivo = &args[RUTA_ARCHIVO];
+    let regular_expression = &args[REGULAR_EXPRESSION];
+    let ruta_archivo = &args[RUTA_ARCHIVO];
 
-      let file_processor = FileProcessor::build(ruta_archivo.to_string())?;
-        //let regex_processor = RegexProcessor::new(regular_expression.to_string());
+    let file_processor = FileProcessor::build(ruta_archivo.to_string())?;
+    let regex_processor = RegexProcessor::new(regular_expression);
 
-      Ok(CommandProcessor {})
-    }
+    Ok(CommandProcessor {
+      file_processor: file_processor,
+      regex_processor: regex_processor
+    })
+  }
 
-    pub fn run(&self) {
-      println!("Bienvenido al egrep rustico!");
-    }
+  pub fn run(&self) {
+    println!("Bienvenido al egrep rustico!");
+  }
 }
 
 

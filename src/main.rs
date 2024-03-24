@@ -27,5 +27,4 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     
     let _ = run(args).map_err(|e: CustomError| print_error(e));
-
 }

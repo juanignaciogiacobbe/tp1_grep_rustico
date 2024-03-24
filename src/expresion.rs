@@ -1,7 +1,14 @@
 use std::vec;
+use core::fmt::Debug;
 
 pub trait Expresion {
     fn filtrar_linea<'a>(&self, linea: &'a str) -> &'a str;
+}
+
+impl Debug for dyn Expresion {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Expresion{{{}}}", "Expresion")
+    }
 }
 
 //EMPIEZAN LAS EXPRESIONES NORMALES
@@ -12,6 +19,7 @@ pub trait Expresion {
 pub struct ExpresionNormal {
     expresion: String
 }
+
 
 impl ExpresionNormal {
     pub fn new(expresion: &str) -> Self {
