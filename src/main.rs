@@ -15,7 +15,7 @@ fn run(args: Vec<String>) -> Result<(), CustomError> {
       Err(e) => return Err(e)
   };
 
-  command_processor.run();
+  let _ = command_processor.run();
 
   Ok(())
 }

@@ -2,29 +2,35 @@ use std::{fs::File, io::{BufRead, BufReader}};
 
 use crate::custom_error::CustomError;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct FileProcessor {
-    lecturas: Vec<String>
+    archivo: File
 }
 
 impl FileProcessor {
     pub fn build(ruta_archivo: String) -> Result<FileProcessor, CustomError> { 
 
         let archivo = match File::open(ruta_archivo) {
-            Ok(archivo) => BufReader::new(archivo).lines(),
+            Ok(archivo) => archivo,
             Err(_err) => return Err(CustomError::ArchivoNoEncontrado)
         };
 
+        Ok(FileProcessor { archivo })
+    }
+
+    pub fn obtener_lecturas(&self) -> Result<Vec<String>, CustomError> {
+        let reader = BufReader::new(&self.archivo).lines();
+
         let mut lecturas: Vec<String> = vec![];
 
-        for linea in archivo {
+        for linea in reader {
             match linea {
                 Ok(linea) => lecturas.push(linea),
                 Err(_err) => return Err(CustomError::ErrorEnLecturaDelArchivo)
-            }
+            };
         }
 
-        Ok(FileProcessor { lecturas })
+        Ok(lecturas)
     }
 
 }
@@ -47,5 +53,12 @@ mod tests {
         let file_processor = FileProcessor::build("./hola/aca/estan/los/datos/data.txt".to_string());
         
         assert!(file_processor.is_err());
+    }
+
+    #[test]
+    fn test_03_ingreso_una_ruta_valida_y_solicito_que_se_realice_la_lectura_del_archivo() {
+        let file_processor: Result<FileProcessor, CustomError> = FileProcessor::build("./test/data.txt".to_string());
+
+        assert!(file_processor.expect("hola").obtener_lecturas().is_ok());
     }
 }    
