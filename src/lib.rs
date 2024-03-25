@@ -6,4 +6,6 @@ pub mod file_processor;
 
 pub mod expresion;
 
+pub mod expression_builder;
+
 pub mod custom_error;
