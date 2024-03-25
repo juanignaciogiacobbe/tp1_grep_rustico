@@ -16,6 +16,19 @@ impl Debug for dyn Expresion {
     }
 }
 
+//EMPIEZAN LOS HELPERS
+
+pub fn evaluar_resultado_filtrado(regex_index: usize, largo_regex: usize, linea_index: usize) -> ResultadoFiltro {
+  if regex_index == largo_regex {
+    ResultadoFiltro::PosicionFinalEnLinea(linea_index)
+  } else {
+    ResultadoFiltro::NoEncontrado(linea_index)
+  }
+}
+
+//FINALIZAN LOS HELPERS
+
+
 //EMPIEZAN LAS EXPRESIONES NORMALES
 
 //basicamente, una expresion con SOLO caracteres normales.
@@ -38,34 +51,29 @@ impl ExpresionNormal {
         
 impl Expresion for ExpresionNormal {
     fn filtrar_linea(&self, linea: &str) -> ResultadoFiltro {
-        let regex_chars: Vec<char> = self.expresion.chars().collect();
-        let linea_chars: Vec<char> = linea.chars().collect(); 
+      let regex_chars: Vec<char> = self.expresion.chars().collect();
+      let linea_chars: Vec<char> = linea.chars().collect(); 
                 
-        let mut regex_index: usize = 0;
-        let mut linea_index: usize = 0;
+      let mut regex_index: usize = 0;
+      let mut linea_index: usize = 0;
                 
-        while regex_index < regex_chars.len() && linea_index < linea_chars.len() {
-            if regex_chars[regex_index] == '.' {
-                regex_index += 1;
-                linea_index += 1;
+      while regex_index < regex_chars.len() && linea_index < linea_chars.len() {
+          if regex_chars[regex_index] == '.' {
+              regex_index += 1;
+              linea_index += 1;
                         
-            } else if regex_chars[regex_index] == linea_chars[linea_index] {
-                regex_index += 1;
-                linea_index += 1;
-                        
-            } else {
-                regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
-                linea_index += 1;
-                        
-            }
-        }
-                
-        if regex_index == (regex_chars.len()) {
-            ResultadoFiltro::PosicionFinalEnLinea(linea_index)
-        } else {
-            ResultadoFiltro::NoEncontrado(linea_index)
-        }
-                
+          } else if regex_chars[regex_index] == linea_chars[linea_index] {
+              regex_index += 1;
+              linea_index += 1;
+                      
+          } else {
+              regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
+              linea_index += 1;
+                      
+          }
+      }
+
+      evaluar_resultado_filtrado(regex_index, regex_chars.len(), linea_index)      
     } 
 }
         
@@ -226,72 +234,105 @@ impl Expresion for ExpresionNormal {
 
 // // //EMPIEZAN LAS REPETITION EXPRESSIONS
 
-// pub struct Asterisk {
-//     expresion: String
-// }
+pub struct Asterisk {
+    expresion: String
+}
 
-// impl Asterisk {
-//     pub fn new(expresion: &str) -> Self {
-//         Self{ expresion: expresion.to_string() }
-//     }
-// }
+//Las expresiones de este tipo vendran con el siguiente formato:
+// CARACTER_A_REPETIR * CARACTER_SIGUIENTE
+impl Asterisk {
+    pub fn new(expresion: &str) -> Self {
+        Self{ expresion: expresion.to_string() }
+    }
+}
 
-// impl Expresion for Asterisk {
-//     fn filtrar_linea(&self, linea: &str) -> bool {
-//         let regex_chars: Vec<char> = self.expresion.chars().collect();
-//         let linea_chars: Vec<char> = linea.chars().collect(); 
+impl Expresion for Asterisk {
+    fn filtrar_linea(&self, linea: &str) -> ResultadoFiltro {
+      let regex_chars: Vec<char> = self.expresion.chars().collect();
+      let linea_chars: Vec<char> = linea.chars().collect(); 
 
-//         let mut indices_elementos_a_repetir: Vec<usize> = vec![];
+      let elemento_a_repetir = regex_chars[0]; //contiene el elemento a repetir
+      
+      let mut index_linea = 0;
 
-//         for i in 0..regex_chars.len() {
-//             if regex_chars[i] == '*' {
-//                 indices_elementos_a_repetir.push(i - 1);
-//             }
-//         }
+     // if regex_chars.len() == 3 {
+        let caracter_siguiente = regex_chars[2]; //contiene el elemento siguiente a esta expresion.
 
-//         let mut regex_index: usize = 0;
-//         let mut linea_index: usize = 0;
-//         let mut index_elementos_a_repetir = 0;
-                
-//         while regex_index < regex_chars.len() && linea_index < linea_chars.len() {
-//             if regex_index == indices_elementos_a_repetir[index_elementos_a_repetir] {
+        let mut cantidad_repeticiones = 0;
 
-//                 while regex_chars[regex_index] == linea_chars[linea_index] {
-//                     linea_index += 1;
-//                 } 
+
+        let index_siguiente_caracter = match linea.find(caracter_siguiente) {
+          Some(index) => index,
+          None => 0,
+        };
+
+        while index_linea < index_siguiente_caracter {
+          if linea_chars[index_linea] == elemento_a_repetir {
+            index_linea += 1;
+            cantidad_repeticiones += 1;
+          }
+        }
+
+        if cantidad_repeticiones == index_siguiente_caracter {
+          return ResultadoFiltro::PosicionFinalEnLinea(index_linea);
+        } else {
+          return ResultadoFiltro::NoEncontrado(index_linea);
+        }
+    // /}
+  }
+
+      
+
+
+
+    //   let mut indices_elementos_a_repetir: Vec<usize> = vec![];
+
+    //   for i in 0..regex_chars.len() {
+    //       if regex_chars[i] == '*' {
+    //           indices_elementos_a_repetir.push(i - 1);
+    //       }
+    //   }
+
+    //   let mut regex_index: usize = 0;
+    //   let mut linea_index: usize = 0;
+    //   let mut index_elementos_a_repetir = 0;
+              
+    //   while regex_index < regex_chars.len() && linea_index < linea_chars.len() {
+    //     if regex_index == indices_elementos_a_repetir[index_elementos_a_repetir] {
+
+    //       while regex_chars[regex_index] == linea_chars[linea_index] {
+    //         linea_index += 1;
+    //       } 
     
-//                 if regex_chars[regex_index] == '.' {
-//                     while linea_chars[linea_index] != regex_chars[regex_index + 2] {
-//                         linea_index += 1;
-//                     }
-//                 }
+    //       if regex_chars[regex_index] == '.' {
+    //         while linea_chars[linea_index] != regex_chars[regex_index + 2] {
+    //           linea_index += 1;
+    //         }
+    //       }
                 
-//                 index_elementos_a_repetir += 1;
-//                 regex_index += 2; //Me salteo el '*' tambien
-//             }
+    //       index_elementos_a_repetir += 1;
+    //       regex_index += 2; //Me salteo el '*' tambien
+    //     }
 
-//             if regex_chars[regex_index] == '.' {
-//                 regex_index += 1;
-//                 linea_index += 1;
+    //     if regex_chars[regex_index] == '.' {
+    //       regex_index += 1;
+    //       linea_index += 1;
                         
-//             } else if regex_chars[regex_index] == linea_chars[linea_index] {
-//                 regex_index += 1;
-//                 linea_index += 1;
+    //     } else if regex_chars[regex_index] == linea_chars[linea_index] {
+    //         regex_index += 1;
+    //         linea_index += 1;
                         
-//             } else {
-//                 regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
-//                 linea_index += 1;
+    //     } else {
+    //         regex_index = 0; //no encontre el patron, por lo que sigo buscando dentro de la linea
+    //         linea_index += 1;
                         
-//             }
-//         }
-                
-//         if regex_index == (regex_chars.len()) {
-//             true
-//         } else {
-//             false
-//         }
-//     }
-// }
+    //     }
+    //   }
+
+    // evaluar_resultado_filtrado(regex_index, regex_chars.len(), linea_index)     
+    
+    }
+
  
 
 // pub struct Plus {

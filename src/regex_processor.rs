@@ -76,7 +76,11 @@ impl RegexProcessor {
                 
                 nueva_expresion.push(caracteres_regex[i - 1]);
                 nueva_expresion.push(caracteres_regex[i]);
-                
+
+                if (i + 1) < caracteres_regex.len() {
+                    nueva_expresion.push(caracteres_regex[i + 1]);
+                }
+
                 expresiones.push(nueva_expresion);
                 expresiones.push("".to_string());
                 index_expresiones += 2;
@@ -120,53 +124,51 @@ impl RegexProcessor {
             expresiones.retain(|expresion| expresion != &"".to_string());
         }
 
+        println!("{:?}", expresiones);
+
         Self::construir_expresiones(expresiones)
         
     }
     
     fn construir_expresiones(expresiones: Vec<String>) -> Vec<Box<dyn Expresion>> { 
         ExpressionBuilder::construir_expresiones(expresiones)
-    
     }
-
 
     pub fn filtrar_lecturas(&self, lecturas: Vec<String>) -> Vec<String> {
         let mut resultado_filtro: Vec<String> = vec![];
                 
-        for lectura in lecturas {
-
-            match Self::filtrar_lectura(lectura, self.expresiones) {
-                ResultadoFiltroLectura::Encontrada => resultado_filtro.push(lectura),
-                ResultadoFiltroLectura::NoEncontrada => ()
-            };
+        for lectura in lecturas {  
+            let mut index_linea = 0;
+            let mut index_expresiones = 0;
+                
+            while index_expresiones < self.expresiones.len() && index_linea < lectura.len() {
+                match self.expresiones[index_expresiones].filtrar_linea(&lectura[index_linea..]) {
+                    ResultadoFiltro::PosicionFinalEnLinea(index_lectura) => {
+                        index_linea = index_lectura;
+                        index_expresiones += 1;
+                    
+                    },
+                    ResultadoFiltro::NoEncontrado(index_lectura) => {
+                        index_linea = index_lectura;
+                        index_expresiones = 0;
+                    
+                    }
+                };
+            }
+            
+            if index_expresiones == self.expresiones.len() {
+                println!("Matchee!");
+                resultado_filtro.push(lectura);
+            }           
         }
 
         println!("{:?}", resultado_filtro);
         resultado_filtro
-    }
-
-    fn filtrar_lectura(lectura: String, expresiones: Vec<Box<dyn Expresion>>) -> ResultadoFiltroLectura {
-        //if expresiones.len() == 1 {
-            match expresiones[0].filtrar_linea(&lectura) {
-                ResultadoFiltro::PosicionFinalEnLinea(index_linea) => ResultadoFiltroLectura::Encontrada,
-                ResultadoFiltro::NoEncontrado(index_linea) => ResultadoFiltroLectura::NoEncontrada
-            }
-        //}
-        // let mut index_lectura = 0;
-
-        // let mut index_expresion = 0;
-
-        // while index_lectura < lectura.len() {
-        //     match expresiones[index_expresion].filtrar_linea(&lectura) {
-        //         ResultadoFiltro::PosicionFinalEnLinea(index_linea) => index_lectura = index_linea,
-        //         ResultadoFiltro::NoEncontrado(index_linea) => {index_lectura = index_linea; index_expresion = 0;}
-        //     }
-        // }
-
 
     }
-
 }
+
+//}
 
 #[cfg(test)]
 mod tests {
@@ -183,13 +185,20 @@ mod tests {
     fn test_02_filtro_dada_una_regex_con_un_metacaracter() {
         let regex_processor = RegexProcessor::build("ab.cd");
 
-        //assert_eq!(regex_processor.unwrap().filtrar_lecturas(vec!["juan dice el abecedario: abccdefg".to_string(), "fedcba".to_string()]), vec!["juan dice el abecedario: abccdefg".to_string()]);
+        assert_eq!(regex_processor.unwrap().filtrar_lecturas(vec!["juan dice el abecedario: abccdefg".to_string(), "fedcba".to_string()]), vec!["juan dice el abecedario: abccdefg".to_string()]);
     }
 
     #[test]
-    fn test_03_filtro_dada_una_regex_con_caret_y_asterisk() {
-        let regex_processor = RegexProcessor::build("^ab*cd");
+    fn test_03_filtro_dada_una_regex_con_asterisk() {
+        let regex_processor = RegexProcessor::build("ab*cd");
 
-        //assert_eq!(regex_processor.unwrap().filtrar_lecturas(vec!["abccdefg juan".to_string(), "fedcba".to_string()]), vec!["abccdefg juan".to_string()]);
+        assert_eq!(regex_processor.unwrap().filtrar_lecturas(vec!["abbbcdefg juan".to_string(), "fedcba".to_string()]), vec!["abbbcdefg juan".to_string()]);
+    }
+
+    #[test]
+    fn test_04_filtro_dada_una_regex_con_asterisk() {
+        let regex_processor = RegexProcessor::build("ab*");
+
+        assert_eq!(regex_processor.unwrap().filtrar_lecturas(vec!["abbbcdefg juan".to_string(), "fedcba".to_string()]), vec!["abbbcdefg juan".to_string()]);
     }
 }

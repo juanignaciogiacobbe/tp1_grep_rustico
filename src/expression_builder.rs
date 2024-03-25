@@ -1,6 +1,6 @@
 //use crate::expresion::{Asterisk, Brackets, CurvyBrackets, Expresion, ExpresionNormal, Plus};
 
-use crate::expresion::{Expresion, ExpresionNormal};
+use crate::expresion::{Asterisk, Expresion, ExpresionNormal};
 
 //const CARET: char = '^';
 const ASTERISK: char = '*';
@@ -23,9 +23,9 @@ impl ExpressionBuilder {
             // if expresion.contains(OPEN_BRACKET) {
             //     vector_expresiones.push(Box::new(Brackets::new(&expresion)));
 
-            // } else if expresion.contains(ASTERISK) {
-            //     println!("Tengo un asterisk!");
-            //     vector_expresiones.push(Box::new(Asterisk::new(&expresion)));
+            if expresion.contains(ASTERISK) {
+                println!("Tengo un asterisk! y soy {}", expresion);
+                vector_expresiones.push(Box::new(Asterisk::new(&expresion)));
 
             // } else if expresion.contains(PLUS) {
             //     println!("Tengo un plus!");
@@ -34,10 +34,10 @@ impl ExpressionBuilder {
             // } else if expresion.contains(OPEN_CURVY_BRACKET) {
             //     println!("Tengo un curvy bracket!");
             //     vector_expresiones.push(Box::new(CurvyBrackets::new(&expresion)));
-            // } else {
+             } else {
                 println!("Soy una expresion normal!");
                 vector_expresiones.push(Box::new(ExpresionNormal::new(&expresion)));
-            //}
+            }
 
         }
 
