@@ -36,7 +36,7 @@ impl CommandProcessor {
           Err(_err) => return Err(_err)
     };
 
-    self.regex_processor.filtrar_lecturas(lecturas);
+    //self.regex_processor.filtrar_lecturas(lecturas);
 
     Ok(())
   }

@@ -1,4 +1,4 @@
-pub mod command_processor;
+//pub mod command_processor;
 
 pub mod regex_processor;
 
