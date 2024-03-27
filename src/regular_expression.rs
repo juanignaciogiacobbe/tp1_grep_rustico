@@ -1,215 +1,384 @@
-use std::collections::VecDeque;
+use std::str::Chars;
 
 use crate::{
-    cantidad_repeticiones::{self, CantidadRepeticiones}, caracter::Caracter, custom_error::CustomError, evaluacion_paso::EvaluacionPaso, paso_regex::PasoRegex
+    clase_regex::ClaseRegex, custom_error::CustomError, linea::Linea, paso_regex::PasoRegex, repeticiones::Repeticiones, resultado_validacion::ResultadoValidacion, valor::Valor
 };
 
-#[derive(Debug)]
+const PERIOD: char = '.';
+const CARET: char = '^';
+const DOLLAR_SIGN: char = '$';
+const ASTERISK: char = '*';
+const PLUS: char = '+';
+const QUESTION_SIGN: char = '?';
+const OPEN_CURVY_BRACKET: char = '{';
+const CLOSE_CURVY_BRACKET: char = '}';
+const OPEN_BRACKET: char = '[';
+const CLOSE_BRACKET: char = ']';
+
 pub struct RegularExpression {
-    pasos_regex: Vec<PasoRegex>
+    pasos: Vec<PasoRegex>
+}
+
+pub fn definir_bracket_expression(caracteres_iter: &mut Chars<'_>, bracket_cierre: char) -> Result<Vec<char>, CustomError> {
+    let mut contenido_bracket = Vec::new();
+
+    while let Some(caracter) = caracteres_iter.next() {
+        if caracter == bracket_cierre {
+            return Ok(contenido_bracket);
+        }
+        contenido_bracket.push(caracter);
+    }
+
+    return Err(CustomError::UsoErroneoDelCurvyBracket)
 }
 
 impl RegularExpression {
-    pub fn new(expression: &str) -> Result<Self, CustomError> {
-        let mut pasos_regex: Vec<PasoRegex> = Vec::new();
-
+    pub fn new(expression: &str) -> Result<RegularExpression, CustomError>{
+        let mut pasos: Vec<PasoRegex> = Vec::new();
         let mut caracteres_iter = expression.chars();
-
-        while let Some(c) = caracteres_iter.next() {
-            let paso = match c {
-                '.' => Some(PasoRegex { 
-                    caracter: Caracter::Period, 
-                    cantidad_repeticiones: CantidadRepeticiones::Cantidad(1)  
-                }),
+        
+        while let Some(caracter) = caracteres_iter.next() {
+            let paso = match caracter {
                 'a'..='z' => Some(PasoRegex {
-                    caracter: Caracter::Literal(c),
-                    cantidad_repeticiones: CantidadRepeticiones::Cantidad(1)
+                    valor: Valor::Literal{
+                        valor: caracter,
+                        clase: ClaseRegex::Alpha
+                    },
+                    repeticiones: Repeticiones::CantidadExacta(1)
+
                 }),
-                '*' => {
-                    if let Some(anterior) = pasos_regex.last_mut() {
-                        anterior.cantidad_repeticiones = CantidadRepeticiones::Cualquiera;
+                'A'..='Z' => Some(PasoRegex {
+                    valor: Valor::Literal{
+                        valor: caracter,
+                        clase: ClaseRegex::Alpha
+                    },
+                    repeticiones: Repeticiones::CantidadExacta(1)
+                
+                }),
+                PERIOD => Some(PasoRegex {
+                    valor: Valor::Period,
+                    repeticiones: Repeticiones::CantidadExacta(1)
+                
+                }),
+                ASTERISK => {
+                    if let Some(anterior) = pasos.last_mut() {
+                        anterior.repeticiones = Repeticiones::Rango { minimo: Some(0), maximo: None }
                     } else {
                         return Err(CustomError::UsoErroneoDelAsterisk)
                     }
 
                     None
+                
                 },
-                '?' => {
-                    if let Some(anterior) = pasos_regex.last_mut() {
-                        anterior.cantidad_repeticiones = CantidadRepeticiones::Rango { minimo: Some(0), maximo: Some(1) };
+                PLUS => {
+                    if let Some(anterior) = pasos.last_mut() {
+                        anterior.repeticiones = Repeticiones::Rango { minimo: Some(1), maximo: None }
+                    } else {
+                        return Err(CustomError::UsoErroneoDelPlus)
+                    }
+
+                    None
+                
+                },
+                QUESTION_SIGN => {
+                    if let Some(anterior) = pasos.last_mut() {
+                        anterior.repeticiones = Repeticiones::Rango { minimo: Some(0), maximo: Some(1) }
                     } else {
                         return Err(CustomError::UsoErroneoDelQuestionSign)
                     }
 
-                    None
-                }
-                '\\' => { match caracteres_iter.next() {
-                    Some(literal) => {
-                        Some(PasoRegex { 
-                            caracter: Caracter::Literal(literal), 
-                            cantidad_repeticiones: CantidadRepeticiones::Cantidad(1)  
-                        })
-
-                    },
-                    None => return Err(CustomError::CaracterInesperado) 
-                    }
+                    None                
                 },
-                _ => return Err(CustomError::CaracterInesperado) 
+                // CARET => {
+                //         if let Some(_) = pasos.last() {
+                //             return Err(CustomError::UsoErroneoDelCaret)
+                //         } else {
+                //             println!("soy un anchoring!");
+                //         }
+    
+                //         None
+                // },
+                // DOLLAR_SIGN => {
+                //     if let Some(_) = caracteres_iter.next() {
+                //         return Err(CustomError::UsoErroneoDelDollarSign)
+                //     } else {
+                //         println!("soy un dollar sign!");
+                //     }
+
+                //     None
+                // },
+                // OPEN_CURVY_BRACKET => {
+                //     if let Some(anterior) = pasos.last_mut() {
+                //         match definir_bracket_expression(&mut caracteres_iter, CLOSE_CURVY_BRACKET) {
+                //             Ok(contenido_bracket) => println!("{:?}", contenido_bracket),
+                //             Err(err) => return Err(err),
+                //         }
+                //     } else {
+                //         return Err(CustomError::UsoErroneoDelCurvyBracket)
+                //     }
+
+                //     None
+                // },
+                // OPEN_BRACKET => {
+                //     if let Some(anterior) = pasos.last_mut() {
+                //         match definir_bracket_expression(&mut caracteres_iter, CLOSE_BRACKET) {
+                //             Ok(contenido_bracket) => println!("{:?}", contenido_bracket),
+                //             Err(err) => return Err(err),
+                //         }
+                //     } else {
+                //         return Err(CustomError::UsoErroneoDelPlus)
+                //     }
+
+                //     None
+                // }
+                _ => return Err(CustomError::CaracterInesperado)
             };
 
             if let Some(paso) = paso {
-                pasos_regex.push(paso);
-            }
-
-        }
-
-        Ok(Self { pasos_regex })
-
-    }
-
-    pub fn validar_linea(self, linea: &str) -> Result<bool, CustomError> {
-        if !linea.is_ascii() {
-            return Err(CustomError::LineaNoAscii)
-        }
-
-        let mut queue: VecDeque<PasoRegex> = VecDeque::from(self.pasos_regex);
-        let mut stack: Vec<EvaluacionPaso> = Vec::new();
-        let mut index = 0;
-
-        'pasos: while let Some(paso) = queue.pop_front() {
-            match paso.cantidad_repeticiones {
-                CantidadRepeticiones::Cantidad(n) => {
-                    let mut match_size = 0;
-
-                    for _ in [0..n] {
-                        let avance = paso.caracter.validar_coincidencia(&linea[index..]);
-
-                        if avance == 0 && index < linea.len() { //puedo encontrar la coincidencia mas adelante
-                            match backtrack(paso, &mut stack, &mut queue) {
-                                Some(size) => {
-                                    index -= size;
-                                    continue 'pasos;
-                                }
-                                None => {
-                                    return Ok(false)
-                                    //index += avance;
-                                }
-                            }
-                        } else {
-                            match_size += avance;
-                            index += avance; 
-                        }
-                        
-                        // if avance == 0 && index == linea.len() { //aca ya me quede sin caracteres en la linea, no pude matchear
-                        //     return Ok(false)
-                        // }
-
-                    }
-
-                    stack.push(EvaluacionPaso {
-                        paso: paso,
-                        match_size,
-                        backtrackeable: false
-                    })
-                },
-                CantidadRepeticiones::Cualquiera => {
-                    let mut sigo_avanzando = true;
-                    while sigo_avanzando {
-                        let avance = paso.caracter.validar_coincidencia(&linea[index..]);
-
-                        if avance != 0 {
-                            index += avance;
-                            stack.push(EvaluacionPaso {
-                                paso: paso.clone(),
-                                match_size: avance,
-                                backtrackeable: true
-                            })
-                        } else {
-                            sigo_avanzando = false;
-                        }
-
-                    }
-                },
-                CantidadRepeticiones::Rango { minimo, maximo } => {
-                    let mut match_size = 0;
-                    let n = 10;
-
-                    for _ in [0..n] {
-                        let avance = paso.caracter.validar_coincidencia(&linea[index..]);
-
-                        if avance == 0 && index < linea.len() { //puedo encontrar la coincidencia mas adelante
-                            match backtrack(paso, &mut stack, &mut queue) {
-                                Some(size) => {
-                                    index -= size;
-                                    continue 'pasos;
-                                }
-                                None => {
-                                    return Ok(false)
-                                    //index += avance;
-                                }
-                            }
-                        } else {
-                            match_size += avance;
-                            index += avance; 
-                        }
-                        
-                        // if avance == 0 && index == linea.len() { //aca ya me quede sin caracteres en la linea, no pude matchear
-                        //     return Ok(false)
-                        // }
-
-                    }
-
-                    stack.push(EvaluacionPaso {
-                        paso: paso,
-                        match_size,
-                        backtrackeable: false
-                    })
-                },
+                pasos.push(paso);
             }
         }
 
-        Ok(true)
+        println!("{:?}", pasos);
+        Ok(Self { pasos })
     }
 
-}
+//     pub fn procesar_linea(self, linea: &str) -> Result<bool, CustomError> {
+//         if !linea.is_ascii() {
+//             return Err(CustomError::LineaNoAscii)
+//         }
+
+//         let mut index_pasos = 0;
+
+//         let mut index_linea = 0;
+
+//         while index_pasos < self.pasos.len() && index_linea < linea.len() {
+//             let paso = &self.pasos[index_pasos];
+
+//             match paso.repeticiones {
+//                 Repeticiones::CantidadExacta(n) => {
+//                     for _ in 0..n {
+//                         match paso.valor.validar_coincidencia(&linea[index_linea..]) {
+//                             ResultadoValidacion::Encontrado { avance } => {
+//                                 index_linea += avance;
+//                                 index_pasos += 1; //voy al paso siguiente.
+//                             },
+//                             ResultadoValidacion::NoEncontrado { avance } => {
+//                                 index_linea += avance;
+                                
+//                                 index_pasos = 0; //como no matchee y todavia puede quedar parte de la linea por procesar,
+//                                                  // reinicio el index del vector de pasos.
+//                             },
+//                             ResultadoValidacion::LineaTerminada => {
+//                                 return Ok(false)
+//                             },
+//                         }
+//                     }
+//                 },
+//                 Repeticiones::Indefinida => {
+//                     println!("matcheando por indef");
+//                 },
+//                 Repeticiones::Rango { minimo, maximo } => {
+//                     // let min = match minimo {
+//                     //     Some(min) => min,
+//                     //     None => 0,
+//                     // };
+                    
+//                     // let max = match maximo {
+//                     //     Some(max) => max,
+//                     //     None => None,
+//                     // };
+//                     let max: usize = 1;
+//                     let mut min: usize = 0;
+//                     println!("matcheando por rango, min {}, max {}", min, max);
+//                     while min < max {
+//                         match paso.valor.validar_coincidencia(&linea[index_linea..]) {
+//                                 ResultadoValidacion::Encontrado { avance } => {
+//                                     index_linea += avance;
+//                                     min += 1;
+//                                     //index_pasos += 1; //voy al paso siguiente.
+//                                 },
+//                                 ResultadoValidacion::NoEncontrado { avance } => {
+//                                     println!("Estoy aca {}", index_linea);
+//                                     index_linea += avance;
+                                    
+//                                     index_pasos = 0; //como no matchee y todavia puede quedar parte de la linea por procesar,
+//                                                      // reinicio el index del vector de pasos.
+                                    
+//                                     min = max + 1;  
+//                                 },
+//                                 ResultadoValidacion::LineaTerminada => {
+//                                     return Ok(false)
+//                                 },
+//                             };
+//                         println!("holas");
+
+//                         if min == max {
+//                             index_pasos += 1;
+//                         }
+//                     }
+// //                        index_linea += 1;
+
+//                     //for _ in min..max {
+//                         // match paso.valor.validar_coincidencia(&linea[index_linea..]) {
+//                         //     ResultadoValidacion::Encontrado { avance } => {
+//                         //         index_linea += avance;
+//                         //         index_pasos += 1; //voy al paso siguiente.
+//                         //     },
+//                         //     ResultadoValidacion::NoEncontrado { avance } => {
+//                         //         index_linea += avance;
+                                
+//                         //         index_pasos = 0; //como no matchee y todavia puede quedar parte de la linea por procesar,
+//                         //                          // reinicio el index del vector de pasos.
+//                         //     },
+//                         //     ResultadoValidacion::LineaTerminada => {
+//                         //         return Ok(false)
+//                         //     },
+//                         // }
+
+//                     //    index_linea += 1;
+//                   //  }
+//                 },
+//             }
+//         }
 
 
-fn backtrack(paso_actual: PasoRegex, evaluados: &mut Vec<EvaluacionPaso>, siguiente: &mut VecDeque<PasoRegex>) -> Option<usize> {
-    let mut size_anterior: usize = 0;
-    siguiente.push_front(paso_actual);
+//         println!("procesando...");
 
-    while let Some(e) = evaluados.pop() {
-        size_anterior += e.match_size;
+//         Ok(true)
+//     }
 
-        if e.backtrackeable {
-            return Some(size_anterior);
-        } else {
-            siguiente.push_front(e.paso);
+    pub fn filtrar_lectura(&self, lectura: &str) -> Result<bool, CustomError> {
+        let mut linea = match Linea::new(lectura) {
+            Ok(linea) => linea,
+            Err(err) => return Err(err),
+        };
+
+        let mut index_pasos: usize = 0; //Voy a iterar sobre el vector de pasos de la regex.
+
+        while let Some(caracter) = linea.siguiente_caracter() {
+            println!("Soy el caracter {}", caracter);
+
+            let paso = &self.pasos[index_pasos];
+
+            match paso.repeticiones {
+                Repeticiones::CantidadExacta(n) => {
+                    let mut cantidad_repeticiones = 0;
+
+                    for _ in 0..n {
+                        match paso.valor.validar_coincidencia(&linea) {
+                            ResultadoValidacion::Encontrado { avance } => {
+                                cantidad_repeticiones += 1;
+                                linea.actualizar_index(avance);
+                            },
+                            ResultadoValidacion::NoEncontrado { avance } => {
+                                linea.actualizar_index(avance);
+                                index_pasos = 0; //Reinicio el index porque no encontre coincidencia.
+                                break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
+                            },
+                        }
+                    }
+
+                    if cantidad_repeticiones == n {
+                        index_pasos += 1;
+                    }
+
+                    if index_pasos == self.pasos.len() {
+                        return Ok(true)
+                    }
+                },
+
+                Repeticiones::Indefinida => {1;},
+                Repeticiones::Rango { minimo, maximo } => {
+                    let min = match minimo {
+                        Some(min) => min,
+                        None => 0, //Si no viene definido lo tengo que tomar como 0.
+                    };
+                    
+                    let max = match maximo {
+                        Some(max) => max,
+                        None => lectura.len() - linea.index_actual, //Si no viene definido, asumo que puede repetirse la cantidad de veces que
+                                                                    //el resto de la linea me deje.
+                    };
+
+                    let mut cantidad_repeticiones = 0;
+
+                    for _ in min..max {
+                        match paso.valor.validar_coincidencia(&linea) {
+                            ResultadoValidacion::Encontrado { avance } => {
+                                cantidad_repeticiones += 1;
+                                linea.actualizar_index(avance);
+                            },
+                            ResultadoValidacion::NoEncontrado { avance } => {
+                                break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
+                            },
+                        }
+                    }
+
+                    if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
+                        index_pasos += 1;
+                    } else {
+                        index_pasos = 0;
+                    }
+
+                    if index_pasos == self.pasos.len() {
+                        return Ok(true)
+                    }
+                
+                },
+            };
         }
-    }
 
-    None
+        // if index_pasos == self.pasos.len() {
+        //     return Ok(true);
+        // } pal dollar sign :D
+        Ok(false) //Si llego a este punto es porque NO encontre coincidencias en la linea con la regex dada.
+    }
 }
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_01_evaluo_una_regex_creada_con_asterisk() {
-        let regex = RegularExpression::new("ab*cd");
+    fn test_01_regex_con_caracteres_normales() {
+        let regex = RegularExpression::new("abcd");
 
-        assert_eq!(regex.unwrap().validar_linea("acd").unwrap(), true);
-        //assert_eq!(regex.unwrap().validar_linea("abbbbbcd").unwrap(), true);
-       // assert_eq!(regex.unwrap().validar_linea("aacd").unwrap(), false);
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcdefg").unwrap(), true);
     }
 
     #[test]
-    fn test_02_evaluo_una_regex_creada_con_question_sign() {
+    fn test_02_regex_con_caracteres_normales_y_period() {
+        let regex = RegularExpression::new("ab.cd");
+
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abzcdefg").unwrap(), true);
+    }
+
+    #[test]
+    fn test_03_regex_con_caracteres_normales_y_asterisk() {
+        let regex = RegularExpression::new("ab*cd");
+
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcde").unwrap(), true);
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: acde").unwrap(), true);
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abbbbbcde").unwrap(), true);
+    }
+
+    #[test]
+    fn test_04_regex_con_caracteres_normales_y_plus() {
+        let regex = RegularExpression::new("ab+cd");
+
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcde").unwrap(), true);
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: acde").unwrap(), false);
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abbbbbcde").unwrap(), true);
+    }
+
+    #[test]
+    fn test_04_regex_con_caracteres_normales_y_question_sign() {
         let regex = RegularExpression::new("ab?cd");
 
-        //assert_eq!(regex.unwrap().validar_linea("abcd").unwrap(), true);
-        assert_eq!(regex.unwrap().validar_linea("abbcd").unwrap(), true);
-
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcde").unwrap(), true);
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: acde").unwrap(), true);
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abbbbbcde").unwrap(), false);
     }
 }

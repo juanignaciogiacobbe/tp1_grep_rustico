@@ -1,10 +1,5 @@
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ClaseRegex {
-    Alnum,
-    Alpha,
     Digit,
-    Lower,
-    Upper,
-    Space,
-    Punct
+    Alpha
 }

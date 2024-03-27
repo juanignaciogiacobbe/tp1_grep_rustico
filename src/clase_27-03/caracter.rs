@@ -3,7 +3,7 @@ use crate::clase_regex::ClaseRegex;
 #[derive(Debug, Clone)]
 pub enum Caracter {
     Literal(char),
-    Period,
+    Comodin,
     Clase(ClaseRegex)
 }
 
@@ -17,7 +17,7 @@ impl Caracter {
                     0
                 }
             },
-            Caracter::Period => {
+            Caracter::Comodin => {
                 if let Some(caracter) = linea.chars().next() {
                     caracter.len_utf8()
                 } else {

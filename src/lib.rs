@@ -4,20 +4,30 @@
 
 pub mod file_processor;
 
-// pub mod expresion;
+pub mod expresion;
 
-// pub mod expression_builder;
+pub mod expression_builder;
 
 pub mod regular_expression;
 
 pub mod paso_regex;
 
-pub mod cantidad_repeticiones;
+pub mod valor;
 
-pub mod evaluacion_paso;
-
-pub mod caracter;
+pub mod linea;
 
 pub mod clase_regex;
+
+pub mod repeticiones;
+
+pub mod resultado_validacion;
+
+// pub mod cantidad_repeticiones;
+
+// pub mod evaluacion_paso;
+
+// pub mod caracter;
+
+// pub mod clase_regex;
 
 pub mod custom_error;

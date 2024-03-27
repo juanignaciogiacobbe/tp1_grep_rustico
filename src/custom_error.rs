@@ -8,8 +8,13 @@ pub enum CustomError {
     ErrorEnLecturaDelArchivo,
     CaracterInesperado,
     UsoErroneoDelAsterisk,
+    UsoErroneoDelCurvyBracket,
     LineaNoAscii,
-    UsoErroneoDelQuestionSign
+    UsoErroneoDelQuestionSign,
+    UsoErroneoDelPlus,
+    UsoErroneoDelCaret,
+    UsoErroneoDelDollarSign
+
 }
 
 pub struct ArgumentosInsuficientes;
@@ -26,6 +31,11 @@ impl fmt::Display for CustomError {
             CustomError::CaracterInesperado => write!(f, "Error: se ha encontrado un caracter inesperado en la regular expression."),
             CustomError::UsoErroneoDelAsterisk => write!(f, "Error: No haz ingresado correctamente el '*'. Asegurate de antecederlo con un caracter"),
             CustomError::UsoErroneoDelQuestionSign => write!(f, "Error: No haz ingresado correctamente el '?'. Asegurate de antecederlo con un caracter"),
+            CustomError::UsoErroneoDelPlus => write!(f, "Error: No haz ingresado correctamente el '+'. Asegurate de antecederlo con un caracter"),
+            CustomError::UsoErroneoDelCaret => write!(f, "Error: No haz ingresado correctamente el '^'. Asegurate de que sea el primer caracter en tu regex."),
+            CustomError::UsoErroneoDelDollarSign => write!(f, "Error: No haz ingresado correctamente el '$'. Asegurate de que sea el ultimo caracter en tu regex."),
+            CustomError::UsoErroneoDelCurvyBracket => write!(f, "Error: No haz ingresado correctamente el '{{'. Asegurate de que cierre correctamente con un }}."),
+            
             CustomError::LineaNoAscii => write!(f, "Error: la linea ingresada no tiene el formato ascii"),
         }
     }

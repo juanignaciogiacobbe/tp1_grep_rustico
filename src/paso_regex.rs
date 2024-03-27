@@ -1,10 +1,10 @@
 use crate::{
-    cantidad_repeticiones::CantidadRepeticiones, 
-    caracter::Caracter
+    repeticiones::Repeticiones, 
+    valor::Valor
 };
 
-#[derive(Debug, Clone)]
-pub struct PasoRegex{
-    pub(crate) caracter: Caracter,
-    pub(crate) cantidad_repeticiones: CantidadRepeticiones,
+#[derive(Debug)]
+pub struct PasoRegex {
+    pub(crate) valor: Valor,
+    pub(crate) repeticiones: Repeticiones
 }
