@@ -14,25 +14,6 @@ pub enum Valor {
 }
 
 impl Valor {
-    // pub fn validar_coincidencia(&self, linea: &str) -> ResultadoValidacion {
-    //     match self {
-    //         Valor::Literal{valor, clase} => {
-    //             if linea.chars().next() == Some(*caracter) {
-    //                 ResultadoValidacion::Encontrado{avance: caracter.len_utf8()}
-    //             } else {
-    //                 ResultadoValidacion::NoEncontrado{avance: caracter.len_utf8()} 
-    //             }
-    //         },
-    //         Valor::Period => {
-    //             if let Some(caracter) = linea.chars().next() {
-    //                 ResultadoValidacion::Encontrado{avance: caracter.len_utf8()}
-    //             } else {
-    //                 ResultadoValidacion::LineaTerminada
-    //             }
-    //         },
-    //      //   Valor::Clase(_) => 0,
-    //     }
-    // }
     pub fn validar_coincidencia(&self, linea: &Linea) -> ResultadoValidacion {
         if let Some(caracter_a_comparar) = linea.siguiente_caracter() {
             match self {

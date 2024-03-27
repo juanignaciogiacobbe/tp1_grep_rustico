@@ -143,111 +143,6 @@ impl RegularExpression {
         Ok(Self { pasos })
     }
 
-//     pub fn procesar_linea(self, linea: &str) -> Result<bool, CustomError> {
-//         if !linea.is_ascii() {
-//             return Err(CustomError::LineaNoAscii)
-//         }
-
-//         let mut index_pasos = 0;
-
-//         let mut index_linea = 0;
-
-//         while index_pasos < self.pasos.len() && index_linea < linea.len() {
-//             let paso = &self.pasos[index_pasos];
-
-//             match paso.repeticiones {
-//                 Repeticiones::CantidadExacta(n) => {
-//                     for _ in 0..n {
-//                         match paso.valor.validar_coincidencia(&linea[index_linea..]) {
-//                             ResultadoValidacion::Encontrado { avance } => {
-//                                 index_linea += avance;
-//                                 index_pasos += 1; //voy al paso siguiente.
-//                             },
-//                             ResultadoValidacion::NoEncontrado { avance } => {
-//                                 index_linea += avance;
-                                
-//                                 index_pasos = 0; //como no matchee y todavia puede quedar parte de la linea por procesar,
-//                                                  // reinicio el index del vector de pasos.
-//                             },
-//                             ResultadoValidacion::LineaTerminada => {
-//                                 return Ok(false)
-//                             },
-//                         }
-//                     }
-//                 },
-//                 Repeticiones::Indefinida => {
-//                     println!("matcheando por indef");
-//                 },
-//                 Repeticiones::Rango { minimo, maximo } => {
-//                     // let min = match minimo {
-//                     //     Some(min) => min,
-//                     //     None => 0,
-//                     // };
-                    
-//                     // let max = match maximo {
-//                     //     Some(max) => max,
-//                     //     None => None,
-//                     // };
-//                     let max: usize = 1;
-//                     let mut min: usize = 0;
-//                     println!("matcheando por rango, min {}, max {}", min, max);
-//                     while min < max {
-//                         match paso.valor.validar_coincidencia(&linea[index_linea..]) {
-//                                 ResultadoValidacion::Encontrado { avance } => {
-//                                     index_linea += avance;
-//                                     min += 1;
-//                                     //index_pasos += 1; //voy al paso siguiente.
-//                                 },
-//                                 ResultadoValidacion::NoEncontrado { avance } => {
-//                                     println!("Estoy aca {}", index_linea);
-//                                     index_linea += avance;
-                                    
-//                                     index_pasos = 0; //como no matchee y todavia puede quedar parte de la linea por procesar,
-//                                                      // reinicio el index del vector de pasos.
-                                    
-//                                     min = max + 1;  
-//                                 },
-//                                 ResultadoValidacion::LineaTerminada => {
-//                                     return Ok(false)
-//                                 },
-//                             };
-//                         println!("holas");
-
-//                         if min == max {
-//                             index_pasos += 1;
-//                         }
-//                     }
-// //                        index_linea += 1;
-
-//                     //for _ in min..max {
-//                         // match paso.valor.validar_coincidencia(&linea[index_linea..]) {
-//                         //     ResultadoValidacion::Encontrado { avance } => {
-//                         //         index_linea += avance;
-//                         //         index_pasos += 1; //voy al paso siguiente.
-//                         //     },
-//                         //     ResultadoValidacion::NoEncontrado { avance } => {
-//                         //         index_linea += avance;
-                                
-//                         //         index_pasos = 0; //como no matchee y todavia puede quedar parte de la linea por procesar,
-//                         //                          // reinicio el index del vector de pasos.
-//                         //     },
-//                         //     ResultadoValidacion::LineaTerminada => {
-//                         //         return Ok(false)
-//                         //     },
-//                         // }
-
-//                     //    index_linea += 1;
-//                   //  }
-//                 },
-//             }
-//         }
-
-
-//         println!("procesando...");
-
-//         Ok(true)
-//     }
-
     pub fn filtrar_lectura(&self, lectura: &str) -> Result<bool, CustomError> {
         let mut linea = match Linea::new(lectura) {
             Ok(linea) => linea,
@@ -303,27 +198,77 @@ impl RegularExpression {
 
                     let mut cantidad_repeticiones = 0;
 
-                    for _ in min..max {
-                        match paso.valor.validar_coincidencia(&linea) {
-                            ResultadoValidacion::Encontrado { avance } => {
-                                cantidad_repeticiones += 1;
-                                linea.actualizar_index(avance);
-                            },
-                            ResultadoValidacion::NoEncontrado { avance } => {
-                                break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
-                            },
-                        }
+                    match &paso.valor {
+                        Valor::Literal { valor, clase } => {
+                            for _ in min..max {
+                                println!("soy el caracter dentro del punto {}", &lectura[linea.index_actual..]);
+        
+                                match paso.valor.validar_coincidencia(&linea) {
+                                    ResultadoValidacion::Encontrado { avance } => {
+                                        cantidad_repeticiones += 1;
+                                        linea.actualizar_index(avance);
+                                    },
+                                    ResultadoValidacion::NoEncontrado { avance } => {
+                                        break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
+                                    },
+                                }
+                            }
+        
+                            if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
+                                index_pasos += 1;
+                            } else {
+                                index_pasos = 0;
+                            }
+        
+                            if index_pasos == self.pasos.len() {
+                                return Ok(true)
+                            }
+                        },
+                        Valor::Period => {
+                            if index_pasos + 1 == self.pasos.len() {
+                                return Ok(true) //si el ultimo paso es un .*, SIEMPRE voy a matchear
+                            }
+                            //let paso_siguiente = &self.pasos[index_pasos + 1];
+                            //println!("mi siguiente paso es {:?}", paso_siguiente);
+                            while index_pasos + 1 < self.pasos.len() {
+                                println!("Hola, soy otro paso :D");
+
+                                index_pasos += 1;
+                            }
+                            // for _ in min..max {
+                            //     match paso_siguiente.valor.validar_coincidencia(&linea) {
+                            //         ResultadoValidacion::Encontrado { avance } => todo!(),
+                            //         ResultadoValidacion::NoEncontrado { avance } => todo!(),
+                            //     }
+                            // }
+
+                            linea.actualizar_index(1);
+                        },
                     }
 
-                    if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
-                        index_pasos += 1;
-                    } else {
-                        index_pasos = 0;
-                    }
+                    // for _ in min..max {
+                    //     println!("soy el caracter dentro del punto {}", &lectura[linea.index_actual..]);
 
-                    if index_pasos == self.pasos.len() {
-                        return Ok(true)
-                    }
+                    //     match paso.valor.validar_coincidencia(&linea) {
+                    //         ResultadoValidacion::Encontrado { avance } => {
+                    //             cantidad_repeticiones += 1;
+                    //             linea.actualizar_index(avance);
+                    //         },
+                    //         ResultadoValidacion::NoEncontrado { avance } => {
+                    //             break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
+                    //         },
+                    //     }
+                    // }
+
+                    // if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
+                    //     index_pasos += 1;
+                    // } else {
+                    //     index_pasos = 0;
+                    // }
+
+                    // if index_pasos == self.pasos.len() {
+                    //     return Ok(true)
+                    // }
                 
                 },
             };
@@ -374,11 +319,20 @@ mod tests {
     }
 
     #[test]
-    fn test_04_regex_con_caracteres_normales_y_question_sign() {
+    fn test_05_regex_con_caracteres_normales_y_question_sign() {
         let regex = RegularExpression::new("ab?cd");
 
         //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcde").unwrap(), true);
         //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: acde").unwrap(), true);
         assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abbbbbcde").unwrap(), false);
+    }
+
+    #[test]
+    fn test_06_regex_con_combinacion_punto_asterisco() {
+        let regex = RegularExpression::new("ab.*cd");
+
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcde").unwrap(), true);
+        //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: acde").unwrap(), true);
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abacsdkahsdjahscde").unwrap(), true);
     }
 }
