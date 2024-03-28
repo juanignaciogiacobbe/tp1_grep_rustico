@@ -19,6 +19,118 @@ pub struct RegularExpression {
     pasos: Vec<PasoRegex>
 }
 
+pub fn matchear_por_cantidad_de_repeticiones(pasos: &mut Vec<PasoRegex>, mut index_pasos: usize, mut linea: Linea, lectura: &str) -> Result<bool, CustomError> {
+    while let Some(caracter) = linea.siguiente_caracter() {
+        
+        let paso = &pasos[index_pasos];
+
+        match paso.repeticiones {
+            Repeticiones::CantidadExacta(n) => {
+                let mut cantidad_repeticiones = 0;
+
+                for _ in 0..n {
+                    match paso.valor.validar_coincidencia(&linea) {
+                        ResultadoValidacion::Encontrado { avance } => {
+                            cantidad_repeticiones += 1;
+                            linea.actualizar_index(avance);
+                        },
+                        ResultadoValidacion::NoEncontrado { avance } => {
+                            linea.actualizar_index(avance);
+                            index_pasos = 0; //Reinicio el index porque no encontre coincidencia.
+                            break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
+                        },
+                    }
+                }
+
+                if cantidad_repeticiones == n {
+                    index_pasos += 1;
+                }
+
+                if index_pasos == pasos.len() {
+                    return Ok(true)
+                }
+            },
+
+            Repeticiones::Indefinida => {1;},
+            Repeticiones::Rango { minimo, maximo } => {
+                let min = match minimo {
+                    Some(min) => min,
+                    None => 0, //Si no viene definido lo tengo que tomar como 0.
+                };
+                
+                let max = match maximo {
+                    Some(max) => max,
+                    None => lectura.len() - linea.index_actual, //Si no viene definido, asumo que puede repetirse la cantidad de veces que
+                                                                //el resto de la linea me deje.
+                };
+
+                let mut cantidad_repeticiones = 0;
+
+                match &paso.valor {
+                    Valor::Literal { valor, clase } => {
+                        for _ in min..max {
+                            match paso.valor.validar_coincidencia(&linea) {
+                                ResultadoValidacion::Encontrado { avance } => {
+                                    cantidad_repeticiones += 1;
+                                    linea.actualizar_index(avance);
+                                },
+                                ResultadoValidacion::NoEncontrado { avance } => {
+                                    break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
+                                },
+                            }
+                        }
+    
+                        if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
+                            index_pasos += 1;
+                        } else {
+                            index_pasos = 0;
+                        }
+    
+                        if index_pasos == pasos.len() {
+                            return Ok(true)
+                        }
+                    },
+                    Valor::Period => {
+                        if index_pasos + 1 == pasos.len() {
+                            return Ok(true) //si el ultimo paso es un .*, SIEMPRE voy a matchear
+                        }
+
+                        if max == lectura.len() - linea.index_actual {
+                            let resto_linea = match Linea::new(&lectura[linea.index_actual..]) {
+                                Ok(resto_linea) => resto_linea,
+                                Err(err) => return Err(err),
+                            };
+
+                            let pasos_restantes: &mut Vec<PasoRegex> = pasos;
+
+                            let mut i = 0;
+
+                            while i < index_pasos + 1 {
+                                pasos_restantes.remove(0);
+                                i += 1;
+                            }
+
+                            let resultado_resto = matchear_por_cantidad_de_repeticiones(pasos_restantes, 0, resto_linea, &lectura[linea.index_actual..]);
+
+                            let resultado = match resultado_resto {
+                                Ok(resultado) => resultado,
+                                Err(err) => return Err(err),
+                            };
+
+                            match resultado {
+                                true => return Ok(true),
+                                false => return Ok(false),
+                            }
+                        }
+                    },
+                }
+            },
+        };
+
+    }
+return Ok(false);
+}
+
 pub fn definir_bracket_expression(caracteres_iter: &mut Chars<'_>, bracket_cierre: char) -> Result<Vec<char>, CustomError> {
     let mut contenido_bracket = Vec::new();
 
@@ -143,142 +255,28 @@ impl RegularExpression {
         Ok(Self { pasos })
     }
 
-    pub fn filtrar_lectura(&self, lectura: &str) -> Result<bool, CustomError> {
-        let mut linea = match Linea::new(lectura) {
+    pub fn filtrar_lectura(&mut self, lectura: &str) -> Result<bool, CustomError> {
+        let linea = match Linea::new(lectura) {
             Ok(linea) => linea,
             Err(err) => return Err(err),
         };
 
-        let mut index_pasos: usize = 0; //Voy a iterar sobre el vector de pasos de la regex.
+        let index_pasos: usize = 0; //Voy a iterar sobre el vector de pasos de la regex.
+        let resultado = match matchear_por_cantidad_de_repeticiones(&mut self.pasos, index_pasos, linea, lectura) {
+            Ok(resultado) => resultado,
+            Err(err) => return Err(err),
+        };
 
-        while let Some(caracter) = linea.siguiente_caracter() {
-            println!("Soy el caracter {}", caracter);
-
-            let paso = &self.pasos[index_pasos];
-
-            match paso.repeticiones {
-                Repeticiones::CantidadExacta(n) => {
-                    let mut cantidad_repeticiones = 0;
-
-                    for _ in 0..n {
-                        match paso.valor.validar_coincidencia(&linea) {
-                            ResultadoValidacion::Encontrado { avance } => {
-                                cantidad_repeticiones += 1;
-                                linea.actualizar_index(avance);
-                            },
-                            ResultadoValidacion::NoEncontrado { avance } => {
-                                linea.actualizar_index(avance);
-                                index_pasos = 0; //Reinicio el index porque no encontre coincidencia.
-                                break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
-                            },
-                        }
-                    }
-
-                    if cantidad_repeticiones == n {
-                        index_pasos += 1;
-                    }
-
-                    if index_pasos == self.pasos.len() {
-                        return Ok(true)
-                    }
-                },
-
-                Repeticiones::Indefinida => {1;},
-                Repeticiones::Rango { minimo, maximo } => {
-                    let min = match minimo {
-                        Some(min) => min,
-                        None => 0, //Si no viene definido lo tengo que tomar como 0.
-                    };
-                    
-                    let max = match maximo {
-                        Some(max) => max,
-                        None => lectura.len() - linea.index_actual, //Si no viene definido, asumo que puede repetirse la cantidad de veces que
-                                                                    //el resto de la linea me deje.
-                    };
-
-                    let mut cantidad_repeticiones = 0;
-
-                    match &paso.valor {
-                        Valor::Literal { valor, clase } => {
-                            for _ in min..max {
-                                println!("soy el caracter dentro del punto {}", &lectura[linea.index_actual..]);
-        
-                                match paso.valor.validar_coincidencia(&linea) {
-                                    ResultadoValidacion::Encontrado { avance } => {
-                                        cantidad_repeticiones += 1;
-                                        linea.actualizar_index(avance);
-                                    },
-                                    ResultadoValidacion::NoEncontrado { avance } => {
-                                        break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
-                                    },
-                                }
-                            }
-        
-                            if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
-                                index_pasos += 1;
-                            } else {
-                                index_pasos = 0;
-                            }
-        
-                            if index_pasos == self.pasos.len() {
-                                return Ok(true)
-                            }
-                        },
-                        Valor::Period => {
-                            if index_pasos + 1 == self.pasos.len() {
-                                return Ok(true) //si el ultimo paso es un .*, SIEMPRE voy a matchear
-                            }
-                            //let paso_siguiente = &self.pasos[index_pasos + 1];
-                            //println!("mi siguiente paso es {:?}", paso_siguiente);
-                            while index_pasos + 1 < self.pasos.len() {
-                                println!("Hola, soy otro paso :D");
-
-                                index_pasos += 1;
-                            }
-                            // for _ in min..max {
-                            //     match paso_siguiente.valor.validar_coincidencia(&linea) {
-                            //         ResultadoValidacion::Encontrado { avance } => todo!(),
-                            //         ResultadoValidacion::NoEncontrado { avance } => todo!(),
-                            //     }
-                            // }
-
-                            linea.actualizar_index(1);
-                        },
-                    }
-
-                    // for _ in min..max {
-                    //     println!("soy el caracter dentro del punto {}", &lectura[linea.index_actual..]);
-
-                    //     match paso.valor.validar_coincidencia(&linea) {
-                    //         ResultadoValidacion::Encontrado { avance } => {
-                    //             cantidad_repeticiones += 1;
-                    //             linea.actualizar_index(avance);
-                    //         },
-                    //         ResultadoValidacion::NoEncontrado { avance } => {
-                    //             break; //No me interesa seguir iterando en este punto(es mas, podria romper el matching completo :D).
-                    //         },
-                    //     }
-                    // }
-
-                    // if cantidad_repeticiones >= min && cantidad_repeticiones <= max {
-                    //     index_pasos += 1;
-                    // } else {
-                    //     index_pasos = 0;
-                    // }
-
-                    // if index_pasos == self.pasos.len() {
-                    //     return Ok(true)
-                    // }
-                
-                },
-            };
+        match resultado {
+            true => Ok(true),
+            false => Ok(false),
         }
 
         // if index_pasos == self.pasos.len() {
         //     return Ok(true);
         // } pal dollar sign :D
-        Ok(false) //Si llego a este punto es porque NO encontre coincidencias en la linea con la regex dada.
     }
+
 }
 
 
@@ -333,6 +331,6 @@ mod tests {
 
         //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abcde").unwrap(), true);
         //assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: acde").unwrap(), true);
-        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abacsdkahsdjahscde").unwrap(), true);
+        assert_eq!(regex.unwrap().filtrar_lectura("juan dice el abecedario: abacsdkahsdjahscdefgg").unwrap(), true);
     }
 }
